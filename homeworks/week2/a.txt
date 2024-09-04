@@ -1,0 +1,4 @@
+Tom|Software Engineer|1995
+John Snow|Teacher|1997
+Maria Onizuka|Student|2001
+Emily|Student|2002

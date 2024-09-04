@@ -1,5 +1,8 @@
 # Learning BE Go
-## Week 1:
+Access homework folder for week N
+```
+cd homeworks/weekN
+```
 To run N-th problem, please uncomment the relevant function in file main.go and run the following command
 ```
 go run main.go problemN.go 
