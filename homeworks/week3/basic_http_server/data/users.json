@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "username": "huyhaha",
+        "password": "123",
+        "profile": "uploads/huylq.jpg"
+    },
+    {
+        "id": 2,
+        "username": "huylq123",
+        "password": "123",
+        "profile": "uploads/huylq123.jpg"
+    },
+    {
+        "id": 3,
+        "username": "huylq1",
+        "password": "123",
+        "profile": "uploads/1726131294_Logo mới.png"
+    },
+    {
+        "id": 4,
+        "username": "huylq73",
+        "password": "123",
+        "profile": "uploads/1726132386_Logo mới.png"
+    }
+]
