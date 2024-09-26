@@ -1,0 +1,43 @@
+# Các tệp nhị phân Go và thư mục build
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Thư mục biên dịch Go
+/build/
+bin/
+vendor/
+
+# Các tệp cấu hình môi trường và cache
+*.env
+*.log
+*.local
+*.cache
+*.tmp
+*.swp
+
+# Thư viện module Go
+go.sum
+
+# Thư mục Go module cache
+/pkg/mod/
+go.work
+go.work.sum
+
+# Thư mục mặc định cho các file biên dịch cục bộ
+/tmp/
+
+# MacOS file
+.DS_Store
+
+# VSCode settings
+.vscode/
+
+# JetBrains IDEs (IntelliJ IDEA, GoLand, etc.) settings
+.idea/
+
+# Các tệp khác của hệ điều hành hoặc IDE
+Thumbs.db
