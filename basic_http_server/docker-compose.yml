@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  db:
+    image: mysql:8.0.32
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+volumes:
+  dbdata:
+    driver: local
