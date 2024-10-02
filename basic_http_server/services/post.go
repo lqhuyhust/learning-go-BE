@@ -1,9 +1,14 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"httpServer/config"
 	"httpServer/models"
 	"httpServer/repositories"
+	"time"
 )
 
 type PostService struct {
@@ -30,12 +35,30 @@ func (s *PostService) CreatePost(userID uint, title string, content string) (*mo
 	return post, nil
 }
 
-// Show all posts
-func (s *PostService) ShowPosts() ([]models.Post, error) {
+// Show all posts of an author
+func (s *PostService) ShowUserPosts(page int, limit int) ([]models.Post, error) {
+	// make redis cacheKey
+	cacheKey := fmt.Sprintf("user_posts_page_%d", page)
+
+	// checck cacheKey exists
+	cachedPosts, err := config.RedisPostClient.Get(context.Background(), cacheKey).Result()
+	if err == nil {
+		var posts []models.Post
+		json.Unmarshal([]byte(cachedPosts), &posts)
+		return posts, nil
+	}
+
+	// if cacheKey not exists, query database
 	var posts []models.Post
-	if err := s.PostRepository.DB.Find(&posts).Error; err != nil {
+	posts, err = s.PostRepository.ShowPosts(page, limit)
+	if err != nil {
 		return nil, err
 	}
+
+	// store data to redis
+	cacheData, _ := json.Marshal(posts)
+	config.RedisPostClient.Set(context.Background(), cacheKey, cacheData, time.Minute*5)
+
 	return posts, nil
 }
 

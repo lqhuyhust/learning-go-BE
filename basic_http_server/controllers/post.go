@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"httpServer/services"
 	"net/http"
 	"strconv"
@@ -31,6 +32,7 @@ func (ctrl *PostController) CreatePost(c *gin.Context) {
 	}
 
 	userID := c.GetUint("user_id")
+	fmt.Println(userID)
 	post, err := ctrl.PostService.CreatePost(userID, input.PostTitle, input.PostContent)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -41,12 +43,29 @@ func (ctrl *PostController) CreatePost(c *gin.Context) {
 
 // Show all posts
 func (ctrl *PostController) ShowPosts(c *gin.Context) {
-	posts, err := ctrl.PostService.ShowPosts()
+	// get page and limit
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	// get posts of user
+	posts, err := ctrl.PostService.ShowUserPosts(page, limit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, posts)
+
+	c.JSON(http.StatusOK, gin.H{
+		"posts": posts,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 // Show post by ID

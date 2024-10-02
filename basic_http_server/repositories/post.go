@@ -31,6 +31,15 @@ func (p *PostRepository) FindByID(id uint) (*models.Post, error) {
 	return &post, nil
 }
 
+// Find all posts
+func (r *PostRepository) ShowPosts(page int, limit int) ([]models.Post, error) {
+	var posts []models.Post
+	if err := r.DB.Limit(limit).Offset((page - 1) * limit).Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
 // Delete a post
 func (r *PostRepository) Delete(postID uint) error {
 	return r.DB.Where("id = ?", postID).Delete(&models.Post{}).Error
