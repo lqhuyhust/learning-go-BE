@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"httpServer/config"
 	"httpServer/controllers"
 	"httpServer/database"
 	"httpServer/models"
@@ -18,6 +19,9 @@ func main() {
 
 	// Connect to database
 	database.ConnectDatabase()
+
+	// Load redis
+	config.ConnectRedis()
 
 	// Run automigration
 	err := database.DB.AutoMigrate(
@@ -48,6 +52,7 @@ func main() {
 	postService := services.NewPostService(postRepository)
 	reactionService := services.NewReactionService(reactionRepository)
 	commentService := services.NewCommentService(commentRepository)
+	pingService := services.NewPingService()
 
 	// Init controllers
 	authController := controllers.NewAuthController(authService)
@@ -55,6 +60,7 @@ func main() {
 	postController := controllers.NewPostController(postService)
 	reactionController := controllers.NewReactionController(reactionService)
 	commentController := controllers.NewCommentController(commentService)
+	pingController := controllers.NewPingController(pingService)
 
 	// Init routes
 	router := routes.InitRoutes(
@@ -63,6 +69,7 @@ func main() {
 		postController,
 		reactionController,
 		commentController,
+		pingController,
 	)
 
 	fmt.Println("Server running on http://localhost:8080")

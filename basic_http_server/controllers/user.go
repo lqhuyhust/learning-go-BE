@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"fmt"
 	"httpServer/services"
 	"httpServer/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,9 +21,16 @@ func NewUserController(userService *services.UserService) *UserController {
 }
 
 func (ctrl *UserController) GetUser(c *gin.Context) {
-	userID := c.GetUint("user_id")
+	userIDStr := c.Param("id")
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
-	user, err := ctrl.UserService.GetUserByID(userID)
+	fmt.Println(userID) // In ra để kiểm tra userID
+
+	user, err := ctrl.UserService.GetUserByID(uint(userID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

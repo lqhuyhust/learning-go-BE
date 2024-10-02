@@ -15,6 +15,7 @@ func InitRoutes(
 	postController *controllers.PostController,
 	reactionController *controllers.ReactionController,
 	commentController *controllers.CommentController,
+	pingController *controllers.PingController,
 ) *gin.Engine {
 	router := gin.Default()
 	authService := &services.AuthService{}
@@ -36,7 +37,7 @@ func InitRoutes(
 	}
 
 	// user routes
-	userRoutes := router.Group("/user")
+	userRoutes := router.Group("/users")
 	userRoutes.Use(middleware.AuthMiddleware(authService))
 	{
 		userRoutes.GET("/:id", userController.GetUser)
@@ -44,7 +45,8 @@ func InitRoutes(
 	}
 
 	// post routes
-	postRoutes := router.Group("/post")
+	postRoutes := router.Group("/posts")
+	postRoutes.GET("/", postController.ShowPosts)
 	postRoutes.Use(middleware.AuthMiddleware(authService))
 	{
 		postRoutes.GET("/:id", postController.ShowPostByID)
@@ -54,7 +56,7 @@ func InitRoutes(
 	}
 
 	// reaction routes
-	reactionRoutes := router.Group("/reaction")
+	reactionRoutes := router.Group("/reactions")
 	reactionRoutes.Use(middleware.AuthMiddleware(authService))
 	{
 		reactionRoutes.POST("/", reactionController.MakeReaction)
@@ -62,13 +64,22 @@ func InitRoutes(
 	}
 
 	// comment routes
-	commentRoutes := router.Group("/comment")
+	commentRoutes := router.Group("/comments")
 	commentRoutes.Use(middleware.AuthMiddleware(authService))
 	{
 		commentRoutes.POST("/", commentController.CreateComment)
 		commentRoutes.GET("/", commentController.GetComments)
 		commentRoutes.PUT("/:id", commentController.UpdateComment)
 		commentRoutes.DELETE("/:id", commentController.DeleteComment)
+	}
+
+	// ping routes
+	pingRoutes := router.Group("/ping")
+	pingRoutes.Use(middleware.AuthMiddleware(authService))
+	{
+		pingRoutes.GET("/", pingController.Ping)
+		pingRoutes.GET("/count/:id", pingController.GetPingCount)
+		pingRoutes.GET("/top", pingController.GetTopUsers)
 	}
 
 	return router

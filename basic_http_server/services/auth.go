@@ -1,9 +1,13 @@
 package services
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"httpServer/config"
 	"httpServer/models"
 	"httpServer/repositories"
+	"httpServer/utils"
 	"os"
 	"time"
 
@@ -43,13 +47,20 @@ func (s *AuthService) VerifyPassword(hashedPassword, password string) error {
 func (s *AuthService) GenerateAccessJWT(user *models.User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = user.ID
+	claims["user_id"] = user.ID
 	claims["username"] = user.Username
 	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {
 		return "", err
 	}
+
+	// store access token to redis
+	err = config.RedisAccessTokenClient.Set(context.Background(), fmt.Sprintf("%d", user.ID), tokenString, time.Minute*5).Err()
+	if err != nil {
+		return "", err
+	}
+
 	return tokenString, nil
 }
 
@@ -62,7 +73,7 @@ func (s *AuthService) GenerateRefreshJWT(user *models.User) (string, error) {
 
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = user.ID
+	claims["user_id"] = user.ID
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 	tokenString, err := token.SignedString(jwtSecret)
 	if err != nil {
@@ -82,29 +93,35 @@ func (s *AuthService) GenerateRefreshJWT(user *models.User) (string, error) {
 	return tokenString, nil
 }
 
-// verify jwt access token
-func (s *AuthService) VerifyAccessJWT(tokenString string) (uint, error) {
+// parse token
+func ParseToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
+			return nil, errors.New("unexpected signing method")
 		}
 		return jwtSecret, nil
 	})
-	if err != nil || !token.Valid {
-		return 0, errors.New("invalid token")
+
+	if err != nil {
+		return "", err
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return 0, errors.New("invalid token claims")
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// get user id
+		userIDClaim := claims["user_id"]
+
+		switch v := userIDClaim.(type) {
+		case string:
+			return v, nil
+		case float64:
+			// Chuyển đổi float64 thành chuỗi
+			return fmt.Sprintf("%.0f", v), nil
+		default:
+			return "", errors.New("invalid token: no user ID")
+		}
 	}
 
-	userID, ok := claims["id"].(float64)
-	if !ok {
-		return 0, errors.New("invalid token claims")
-	}
-
-	return uint(userID), nil
+	return "", errors.New("invalid token")
 }
 
 // register new user
@@ -121,11 +138,28 @@ func (s *AuthService) Register(username, password, profile string) error {
 		Profile:  profile,
 	}
 
+	// add username to bloom filter
+	hashValue := utils.Hash(username)
+
+	_, err = config.RedisUserClient.SetBit(context.Background(), "bloom_filter", int64(hashValue), 1).Result()
+	if err != nil {
+		return err
+	}
+
 	return s.UserRepository.Save(user)
 }
 
 // login
 func (s *AuthService) Login(username, password string) (string, string, error) {
+	// check user exists in bloom filter
+	hashValue := utils.Hash(username)
+
+	bit, err := config.RedisUserClient.GetBit(context.Background(), "bloom_filter", int64(hashValue)).Result()
+	if err != nil && bit == 0 {
+		return "", "", err
+	}
+
+	// find user from database
 	user, err := s.UserRepository.FindByUsername(username)
 	if err != nil {
 		return "", "", err

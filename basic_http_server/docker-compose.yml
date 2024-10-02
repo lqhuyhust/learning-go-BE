@@ -11,6 +11,12 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_DATABASE}
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
 volumes:
   dbdata:
     driver: local

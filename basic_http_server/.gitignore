@@ -41,3 +41,5 @@ go.work.sum
 
 # Các tệp khác của hệ điều hành hoặc IDE
 Thumbs.db
+
+/uploads/
